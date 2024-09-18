@@ -1,5 +1,5 @@
 
 #import snake_IA
-print("teste2")
+print("teste3")
 
 #codigo_snake
