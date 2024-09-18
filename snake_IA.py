@@ -120,11 +120,11 @@ repeticoes = 0
 def position_food(display_width, display_height, block):
     lista = []
     if repeticoes < 10:
-        lista.append(round(random.randrange(((display_width/2)-50), ((display_width/2)+50), block) / 10.0) * 10.0)
-        lista.append(round(random.randrange(((display_height/2)-50), ((display_height/2)+50) - 10, block) / 10.0) * 10.0)
+        lista.append(round(random.randrange(((display_width//2)-50), ((display_width//2)+50), block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(((display_height//2)-50), ((display_height//2)+50) - 10, block) // 10.0) * 10.0)
     else:
-        lista.append(round(random.randrange(0, display_width, block) / 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) / 10.0) * 10.0)
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
     return lista
 
 class Food:
