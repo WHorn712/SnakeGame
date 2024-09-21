@@ -1,3 +1,5 @@
+from enum import Enum
+
 import pygame
 import random
 import numpy as np
@@ -39,6 +41,7 @@ class Score:
         self.font_style = pygame.font.SysFont("bahnschrift", 25)
         self.score = 0
         self.disp = 0
+        self.frame_iteration = 0
 
     def sum_score(self):
         """Increases the score variable by 1"""
@@ -56,6 +59,11 @@ class Score:
         value = self.font_style.render("SUA PONTUAÇÃO: " + str(self.score), True, color)
         display.display.blit(value, [0, 0])
 
+class Direction(Enum):
+    RIGHT = 1
+    LEFT = 2
+    UP = 3
+    DOWN = 4
 
 class Snake:
     """Represents the game's snake, contains all the variables and functions that the snake needs in the game"""
@@ -68,8 +76,7 @@ class Snake:
         self.speed = snake_speed
         self.snake_list = []
         self.length = 1
-        # direction=0 -> centro / direction=1 -> left / direction=2 -> rigth / direction=4 -> down / direction=3 -> up
-        self.direction = 0
+        self.direction = 1
 
     def draw_snake(self, display, pygame, color=Color().black):
         """Draws the snake on the screen. Requires one mandatory variable, which is the screen, and an optional
@@ -79,26 +86,37 @@ class Snake:
 
     def move_snake(self, action):
         """Moves the snake based on the action chosen by the Q-Learning algorithm"""
-        if action == 0:  # UP
+        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        idx = clock_wise.index(self.direction)
+        if np.array_equal(action, [1,0,0]):
+            new_dir = clock_wise[idx]
+        elif np.array_equal(action, [0,1,0]):
+            next_idx = (idx+1) % 4
+            new_dir = clock_wise[next_idx]
+        else:
+            next_idx = (idx-1) % 4
+            new_dir = clock_wise[next_idx]
+
+        if new_dir == Direction.UP:
             if self.direction != 4:
                 self.y1_change = -self.block
                 self.x1_change = 0
                 self.direction = 3
-        elif action == 1:  # DOWN
+        elif new_dir == Direction.DOWN:
             if self.direction != 3:
                 self.y1_change = self.block
                 self.x1_change = 0
                 self.direction = 4
-        elif action == 2:  # LEFT
+        elif new_dir == Direction.LEFT:
+            if self.direction != 1:
+                self.x1_change = -self.block
+                self.y1_change = 0
+                self.direction = 2
+        else:
             if self.direction != 2:
                 self.x1_change = -self.block
                 self.y1_change = 0
                 self.direction = 1
-        elif action == 3:  # RIGHT
-            if self.direction != 1:
-                self.x1_change = self.block
-                self.y1_change = 0
-                self.direction = 2
 
     def update_position(self):
         """Changes the snake's x and y variables according to xchange and ychange"""
@@ -161,13 +179,13 @@ def get_state(snake, food):
 
 actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
 
-def get_reward(snake, food, game_close):
-    if game_close:
+def get_reward(snake, food, game_close, frame_iteration):
+    if game_close or frame_iteration > 100*snake.length:
         return -10
     elif snake.x == food.x and snake.y == food.y:
         return 10
     else:
-        return -0.1
+        return 0
 
 q_table = {}
 
@@ -175,6 +193,7 @@ alpha = 0.1
 gamma = 0.9
 epsilon = 0.1
 num_episodes = 1000
+state = [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1]
 
 def choose_action(state):
     if random.uniform(0, 1) < epsilon:
@@ -195,15 +214,17 @@ def update_q_table(state, action, reward, next_state):
     q_table[state][action] += alpha * td_error
 
 for episode in range(num_episodes):
-    print("bnvbnvb")
     game_over = False
     game_close = False
+    reward = 0
     food = Food()
     snake = Snake()
     score = Score()
     disp = Display()
     state = get_state(snake, food)
     while not game_over:
+        score.frame_iteration = score.frame_iteration + 1
+        game_over2 = False
         action = choose_action(state)
         snake.move_snake(action)
         snake.update_position()
@@ -211,7 +232,22 @@ for episode in range(num_episodes):
             snake.x = Display().display_width / 2
             snake.y = Display().display_height / 2
             score.sum_disp()
-        reward = get_reward(snake, food, game_close)
+            snake.length = 1
+            snake.snake_list = []
+            score.score = 0
+            game_over2 = True
+            score.frame_iteration = 0
+        for x in snake.snake_list[:-1]:
+            if x == [snake.x, snake.y]:
+                snake.x = Display().display_width / 2
+                snake.y = Display().display_height / 2
+                score.sum_disp()
+                snake.length = 1
+                snake.snake_list = []
+                score.score = 0
+                game_over2 = True
+                score.frame_iteration = 0
+        reward = get_reward(snake, food, game_over2,score.frame_iteration)
         next_state = get_state(snake, food)
         update_q_table(state, action, reward, next_state)
         state = next_state
@@ -223,12 +259,6 @@ for episode in range(num_episodes):
             break
         food.analyze_score(snake, score, disp)
         snake.add_block_in_snake()
-
-        for x in snake.snake_list[:-1]:
-            if x == [snake.x, snake.y]:
-                snake.x = Display().display_width / 2
-                snake.y = Display().display_height / 2
-                score.sum_disp()
 
         disp.update_screen()
         food.draw_food(pygame, disp)
