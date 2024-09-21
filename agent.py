@@ -3,6 +3,7 @@ import random
 import numpy as np
 from collections import deque
 import snake_IA as snake
+import model
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -15,23 +16,74 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
+        self.model = None
+        self.trainer = None
 
-    def get_state(self, snake, food):
+    def get_state(self, display, snake, food):
         #11 valores -> 3 perigos ; 4 direção ; 4 comidas
+        a = []
+        if snake.direction == 1:
+            a.append(1 if snake.x==display.display_width-1 else 0)
+            a.append(1 if snake.y == display.display_height - 1 else 0)
+            a.append(1 if snake.y == 1 else 0)
+        elif snake.direction == 2:
+            a.append(1 if snake.x == 1 else 0)
+            a.append(1 if snake.y == 1 else 0)
+            a.append(1 if snake.y == display.display_height-1 else 0)
+        elif snake.direction == 3:
+            a.append(1 if snake.y == 1 else 0)
+            a.append(1 if snake.x == display.display_width-1 else 0)
+            a.append(1 if snake.x == 1 else 0)
+        else:
+            a.append(1 if snake.y == display.display_height-1 else 0)
+            a.append(1 if snake.x == 1 else 0)
+            a.append(1 if snake.x == display.display_width-1 else 0)
+        direcao = []
+        direcao.append(1 if snake.direction == 2 else 0)
+        direcao.append(1 if snake.direction == 1 else 0)
+        direcao.append(1 if snake.direction == 3 else 0)
+        direcao.append(1 if snake.direction == 4 else 0)
 
-        pass
+        comida = []
+        comida.append(1 if food.x - snake.x < 0 else 0)
+        comida.append(1 if food.x - snake.x > 0 else 0)
+        comida.append(1 if food.y - snake.y < 0 else 0)
+        comida.append(1 if food.y - snake.y > 0 else 0)
+
+        a.extend(direcao)
+        a.extend(comida)
+
+        return np.array(a)
 
     def remember(self, state, action, reward, next_state, done):
-        pass
+        self.memory.append((state, action, reward, next_state, done))
 
     def train_long_memory(self):
-        pass
+        if len(self.memory) > BATCH_SIZE:
+            mini_sample = random.sample(self.memory, BATCH_SIZE)
+        else:
+            mini_sample = self.memory
 
-    def train_short_memory(self):
-        pass
+        states, actions, rewards, next_states, dones = zip(*mini_sample)
+        self.trainer.train_step(states, actions, rewards, next_states, dones)
+
+    def train_short_memory(self, state, action, reward, next_state, done):
+        self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        pass
+        # random moves: tradeoff exploration / exploitation
+        self.epsilon = 80 - self.n_game
+        final_move = [0,0,0]
+        if random.randint(0,200) < self.epsilon:
+            move = random.randint(0, 2)
+            final_move[move] = 1
+        else:
+            state0 = torch.tensor(state, dtype=torch.float)
+            prediction = self.model.predict(state0)
+            move = torch.argmax(prediction).item()
+            final_move[move] = 1
+
+        return final_move
 
 def train():
     plot_scores = []
@@ -65,7 +117,7 @@ def train():
 
             if score > record:
                 recor = score
-                #agent.model.save()
+                agent.model.save()
 
             print('Game', agent.n_game, 'Score', score, 'Record', record)
 
