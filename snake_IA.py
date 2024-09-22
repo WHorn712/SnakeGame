@@ -213,6 +213,14 @@ def update_q_table(state, action, reward, next_state):
     td_error = td_target - q_table[state][action]
     q_table[state][action] += alpha * td_error
 
+def get_is_gameover(snake, disp):
+    if snake.x >= disp.display_width or snake.x < 0 or snake.y >= disp.display_height or snake.y < 0:
+        return True
+    for x in snake.snake_list[:-1]:
+        if x == [snake.x, snake.y]:
+            return True
+    return False
+
 for episode in range(num_episodes):
     game_over = False
     game_close = False

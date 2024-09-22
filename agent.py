@@ -2,7 +2,7 @@ import torch
 import random
 import numpy as np
 from collections import deque
-import snake_IA as snake
+import snake_IA as snake_game
 from model import Linear_QNet, QTrainer
 
 MAX_MEMORY = 100_000
@@ -91,13 +91,39 @@ def train():
     total_score = []
     record = []
     agent = Agent()
-    game = snake()
+    display = snake_game.Display()
+    snake = snake_game.Snake()
+    food = snake_game.Food()
+    score_game = snake_game.Score()
+    frame_iteraction = 0
     while True:
         # get old state
-        state_old = agent.get_state(game)
+        state_old = agent.get_state(display, snake, food)
 
         # get move
         final_move = agent.get_action(state_old)
+
+        snake.move_snake(final_move)
+        snake.update_position()
+        done = snake_game.get_is_gameover(snake, display)
+        reward = snake_game.get_reward(snake, food, done, frame_iteraction)
+        if reward == 10:
+            lista = snake_game.position_food(display.display_width, display.display_height, food.block)
+            food.x = lista[0]
+            food.y = lista[1]
+            snake.increase_size()
+            score_game.sum_score()
+            snake.add_block_in_snake()
+            pass
+        elif reward == -10:
+            pass
+        else:
+            frame_iteraction += 1
+        score = score_game.score
+
+
+
+
 
         # perform move and get new state
         reward, done, score = game.play_step(final_move)
@@ -116,7 +142,7 @@ def train():
             agent.train_long_memory()
 
             if score > record:
-                recor = score
+                record = score
                 agent.model.save()
 
             print('Game', agent.n_game, 'Score', score, 'Record', record)
