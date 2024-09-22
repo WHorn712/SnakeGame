@@ -113,7 +113,7 @@ class Snake:
                 self.direction = 2
         else:
             if self.direction != 2:
-                self.x1_change = -self.block
+                self.x1_change = self.block
                 self.y1_change = 0
                 self.direction = 1
 
@@ -134,21 +134,17 @@ class Snake:
         self.length += 1
 
 repeticoes = 0
-def position_food(display_width, display_height, block):
+def position_food(display_width, display_height, block, n_game):
     lista = []
-    if repeticoes < 10:
-        lista.append(round(random.randrange(((display_width//2)-50), ((display_width//2)+50), block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(((display_height//2)-50), ((display_height//2)+50) - 10, block) // 10.0) * 10.0)
-    else:
-        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+    lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+    lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
     return lista
 
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
     def __init__(self, pygame):
         self.block = 10
-        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block)
+        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block, 0)
         self.x = lista[0]
         self.y = lista[1]
 
@@ -178,11 +174,13 @@ def get_state(snake, food):
 
 actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
 
-def get_reward(snake, food, game_close, frame_iteration):
+def get_reward(snake, food, game_close, frame_iteration, width, height):
     if game_close or frame_iteration > 100*snake.length:
         return -10
     elif snake.x == food.x and snake.y == food.y:
         return 10
+    elif (snake.x <= food.x+10 and snake.x >= food.x-10) and (snake.y <= food.y+10 and snake.y >=food.y-10):
+        return 5
     else:
         return 0
 

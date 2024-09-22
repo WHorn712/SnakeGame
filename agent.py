@@ -102,6 +102,7 @@ while True:
     score_game = snake_game.Score(pygame)
     frame_iteraction = 0
     while True:
+        frame_iteraction += 1
         # get old state
         state_old = agent.get_state(display, snake, food)
 
@@ -111,9 +112,9 @@ while True:
         snake.move_snake(final_move)
         snake.update_position()
         done = snake_game.get_is_gameover(snake, display)
-        reward = snake_game.get_reward(snake, food, done, frame_iteraction)
+        reward = snake_game.get_reward(snake, food, done, frame_iteraction, display.display_width, display.display_height)
         if reward == 10:
-            lista = snake_game.position_food(display.display_width, display.display_height, food.block)
+            lista = snake_game.position_food(display.display_width, display.display_height, food.block, frame_iteraction)
             food.x = lista[0]
             food.y = lista[1]
             snake.increase_size()
@@ -121,7 +122,7 @@ while True:
         elif reward == -10:
             pass
         else:
-            frame_iteraction += 1
+            pass
         snake.add_block_in_snake()
         score = score_game.score
         display.update_screen()
@@ -140,11 +141,12 @@ while True:
 
         if done:
             # train long memory, plot result
+            frame_iteraction = 0
             snake.x = display.display_width / 2
             snake.y = display.display_height / 2
             snake.length = 1
             snake.snake_list = []
-            lista = snake_game.position_food(display.display_width, display.display_height, food.block)
+            lista = snake_game.position_food(display.display_width, display.display_height, food.block, frame_iteraction)
             food.x = lista[0]
             food.y = lista[1]
             score_game.score = 0
