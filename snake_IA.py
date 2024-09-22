@@ -1,11 +1,10 @@
 from enum import Enum
 
-import pygame
+
 import random
 import numpy as np
 
 
-pygame.init()
 
 class Color:
     """Stores the necessary colors for the game"""
@@ -18,7 +17,7 @@ class Color:
 
 class Display:
     """Represents the game screen"""
-    def __init__(self):
+    def __init__(self, pygame):
         self.display_width = 600
         self.display_height = 400
         self.display = pygame.display.set_mode((self.display_width, self.display_height))
@@ -37,7 +36,7 @@ class Display:
 
 class Score:
     """Represents the game score"""
-    def __init__(self):
+    def __init__(self, pygame):
         self.font_style = pygame.font.SysFont("bahnschrift", 25)
         self.score = 0
         self.disp = 0
@@ -67,9 +66,9 @@ class Direction(Enum):
 
 class Snake:
     """Represents the game's snake, contains all the variables and functions that the snake needs in the game"""
-    def __init__(self, snake_block=10, snake_speed=15):
-        self.x = Display().display_width / 2
-        self.y = Display().display_height / 2
+    def __init__(self, pygame, snake_block=10, snake_speed=15):
+        self.x = Display(pygame).display_width / 2
+        self.y = Display(pygame).display_height / 2
         self.x1_change = 0
         self.y1_change = 0
         self.block = snake_block
@@ -86,7 +85,7 @@ class Snake:
 
     def move_snake(self, action):
         """Moves the snake based on the action chosen by the Q-Learning algorithm"""
-        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        clock_wise = [Direction.RIGHT.value, Direction.DOWN.value, Direction.LEFT.value, Direction.UP.value]
         idx = clock_wise.index(self.direction)
         if np.array_equal(action, [1,0,0]):
             new_dir = clock_wise[idx]
@@ -97,17 +96,17 @@ class Snake:
             next_idx = (idx-1) % 4
             new_dir = clock_wise[next_idx]
 
-        if new_dir == Direction.UP:
+        if new_dir == 3:
             if self.direction != 4:
                 self.y1_change = -self.block
                 self.x1_change = 0
                 self.direction = 3
-        elif new_dir == Direction.DOWN:
+        elif new_dir == 4:
             if self.direction != 3:
                 self.y1_change = self.block
                 self.x1_change = 0
                 self.direction = 4
-        elif new_dir == Direction.LEFT:
+        elif new_dir == 2:
             if self.direction != 1:
                 self.x1_change = -self.block
                 self.y1_change = 0
@@ -147,9 +146,9 @@ def position_food(display_width, display_height, block):
 
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
-    def __init__(self):
+    def __init__(self, pygame):
         self.block = 10
-        lista = position_food(Display().display_width, Display().display_height, self.block)
+        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block)
         self.x = lista[0]
         self.y = lista[1]
 
@@ -221,58 +220,3 @@ def get_is_gameover(snake, disp):
             return True
     return False
 
-for episode in range(num_episodes):
-    game_over = False
-    game_close = False
-    reward = 0
-    food = Food()
-    snake = Snake()
-    score = Score()
-    disp = Display()
-    state = get_state(snake, food)
-    while not game_over:
-        score.frame_iteration = score.frame_iteration + 1
-        game_over2 = False
-        action = choose_action(state)
-        snake.move_snake(action)
-        snake.update_position()
-        if snake.x >= disp.display_width or snake.x < 0 or snake.y >= disp.display_height or snake.y < 0:
-            snake.x = Display().display_width / 2
-            snake.y = Display().display_height / 2
-            score.sum_disp()
-            snake.length = 1
-            snake.snake_list = []
-            score.score = 0
-            game_over2 = True
-            score.frame_iteration = 0
-        for x in snake.snake_list[:-1]:
-            if x == [snake.x, snake.y]:
-                snake.x = Display().display_width / 2
-                snake.y = Display().display_height / 2
-                score.sum_disp()
-                snake.length = 1
-                snake.snake_list = []
-                score.score = 0
-                game_over2 = True
-                score.frame_iteration = 0
-        reward = get_reward(snake, food, game_over2,score.frame_iteration)
-        next_state = get_state(snake, food)
-        update_q_table(state, action, reward, next_state)
-        state = next_state
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
-                    game_close = True
-        if game_close:
-            break
-        food.analyze_score(snake, score, disp)
-        snake.add_block_in_snake()
-
-        disp.update_screen()
-        food.draw_food(pygame, disp)
-        snake.draw_snake(disp, pygame)
-        score.draw_score(disp)
-        pygame.display.update()
-        disp.clock.tick(snake.speed)
-    pygame.quit()
-    quit()

@@ -1,4 +1,4 @@
 
-import snake_IA
+import agent
 
 #codigo_snake

@@ -4,7 +4,11 @@ import numpy as np
 from collections import deque
 import snake_IA as snake_game
 from model import Linear_QNet, QTrainer
+import pygame
 
+from snake_IA import Display
+
+pygame.init()
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
@@ -85,16 +89,17 @@ class Agent:
 
         return final_move
 
-def train():
+while True:
+    ok = False
     plot_scores = []
     plot_mean_scores = []
     total_score = []
-    record = []
+    record = 0
     agent = Agent()
-    display = snake_game.Display()
-    snake = snake_game.Snake()
-    food = snake_game.Food()
-    score_game = snake_game.Score()
+    display = Display(pygame)
+    snake = snake_game.Snake(pygame)
+    food = snake_game.Food(pygame)
+    score_game = snake_game.Score(pygame)
     frame_iteraction = 0
     while True:
         # get old state
@@ -113,21 +118,19 @@ def train():
             food.y = lista[1]
             snake.increase_size()
             score_game.sum_score()
-            snake.add_block_in_snake()
-            pass
         elif reward == -10:
             pass
         else:
             frame_iteraction += 1
+        snake.add_block_in_snake()
         score = score_game.score
-
-
-
-
+        display.update_screen()
+        food.draw_food(pygame, display)
+        snake.draw_snake(display, pygame)
+        score_game.draw_score(display)
 
         # perform move and get new state
-        reward, done, score = game.play_step(final_move)
-        state_new = agent.get_state(game)
+        state_new = agent.get_state(display, snake, food)
 
         # train short memory
         agent.train_short_memory(state_old, final_move, reward, state_new, done)
@@ -137,7 +140,15 @@ def train():
 
         if done:
             # train long memory, plot result
-            game.reset()
+            snake.x = display.display_width / 2
+            snake.y = display.display_height / 2
+            snake.length = 1
+            snake.snake_list = []
+            lista = snake_game.position_food(display.display_width, display.display_height, food.block)
+            food.x = lista[0]
+            food.y = lista[1]
+            score_game.score = 0
+            frame_iteraction = 0
             agent.n_game += 1
             agent.train_long_memory()
 
@@ -146,6 +157,21 @@ def train():
                 agent.model.save()
 
             print('Game', agent.n_game, 'Score', score, 'Record', record)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    ok = True
+        if ok:
+            break
+        display.update_screen()
+        food.draw_food(pygame, display)
+        snake.draw_snake(display, pygame)
+        score_game.draw_score(display)
+        pygame.display.update()
+        display.clock.tick(snake.speed)
+    pygame.quit()
+    quit()
 
-if __name__ == '__main__':
-    train()
+#if __name__ == '__main__':
+    #pygame.init()
+    #train()
