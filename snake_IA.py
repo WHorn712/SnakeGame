@@ -187,9 +187,9 @@ def get_reward(last_distance, snake, food, game_close, frame_iteration, width, h
     elif snake.x == food.x and snake.y == food.y:
         return 10
     elif distance_snake_food(snake, food) < last_distance:
-        return 7
+        return 5
     else:
-        return 0
+        return -5
 
 q_table = {}
 
