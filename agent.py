@@ -42,6 +42,8 @@ class Agent:
             a.append(1 if snake.y == display.display_height-1 else 0)
             a.append(1 if snake.x == 1 else 0)
             a.append(1 if snake.x == display.display_width-1 else 0)
+        paredes_quadrante = []
+
         direcao = []
         direcao.append(1 if snake.direction == 2 else 0)
         direcao.append(1 if snake.direction == 1 else 0)
@@ -54,9 +56,98 @@ class Agent:
         comida.append(1 if food.y - snake.y < 0 else 0)
         comida.append(1 if food.y - snake.y > 0 else 0)
 
+
+        width = display.display_width
+        height = display.display_height
+
+        snx = 1 if snake.x < width // 2 else 2
+        snake_quadrante = 1
+        if snx == 1:
+            snake_quadrante = 1 if snake.y < height // 2 else 3
+        else:
+            snake_quadrante = 2 if snake.y < height // 2 else 4
+
+        if snake_quadrante == 1:
+            if snake.direction ==1:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+            elif snake.direction ==2:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+            elif snake.direction ==3:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+            else:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+        elif snake_quadrante==2:
+            if snake.direction == 1:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+            elif snake.direction == 2:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+            elif snake.direction == 3:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+            else:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+        elif snake_quadrante==3:
+            if snake.direction == 1:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+            elif snake.direction == 2:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+            elif snake.direction == 3:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+            else:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+        else:
+            if snake.direction ==1:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+            elif snake.direction ==2:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+            elif snake.direction ==3:
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+            else:
+                paredes_quadrante.append(1)
+                paredes_quadrante.append(0)
+                paredes_quadrante.append(1)
+
+
+        fnx = 1 if food.x < width // 2 else 2
+        food_quadrante = 1
+        if fnx == 1:
+            food_quadrante = 1 if food.y < height // 2 else 3
+        else:
+            food_quadrante = 2 if food.y < height // 2 else 4
+        quadrante = [1 if snake_quadrante==food_quadrante else 0]
+        a.extend(paredes_quadrante)
         a.extend(direcao)
         a.extend(comida)
-
+        a.extend(quadrante)
         return np.array(a)
 
     def remember(self, state, action, reward, next_state, done):
@@ -102,6 +193,7 @@ while True:
     score_game = snake_game.Score(pygame)
     frame_iteraction = 0
     while True:
+        last_distance = snake_game.distance_snake_food(snake, food)
         frame_iteraction += 1
         # get old state
         state_old = agent.get_state(display, snake, food)
@@ -112,7 +204,7 @@ while True:
         snake.move_snake(final_move)
         snake.update_position()
         done = snake_game.get_is_gameover(snake, display)
-        reward = snake_game.get_reward(snake, food, done, frame_iteraction, display.display_width, display.display_height)
+        reward = snake_game.get_reward(last_distance, snake, food, done, frame_iteraction, display.display_width, display.display_height)
         if reward == 10:
             lista = snake_game.position_food(display.display_width, display.display_height, food.block, frame_iteraction)
             food.x = lista[0]

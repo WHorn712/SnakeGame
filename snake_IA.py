@@ -1,5 +1,5 @@
 from enum import Enum
-
+import math
 
 import random
 import numpy as np
@@ -173,14 +173,21 @@ def get_state(snake, food):
     return state
 
 actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
+def distance_snake_food(snake, food):
+    c = (food.x - snake.x)
+    c = c*-1 if c<=0 else c
+    b = (food.y - snake.y)
+    b = b*-1 if b<=0 else b
+    return math.sqrt((b**2)+(c**2))
 
-def get_reward(snake, food, game_close, frame_iteration, width, height):
+
+def get_reward(last_distance, snake, food, game_close, frame_iteration, width, height):
     if game_close or frame_iteration > 100*snake.length:
         return -10
     elif snake.x == food.x and snake.y == food.y:
         return 10
-    elif (snake.x <= food.x+10 and snake.x >= food.x-10) and (snake.y <= food.y+10 and snake.y >=food.y-10):
-        return 5
+    elif distance_snake_food(snake, food) < last_distance:
+        return 7
     else:
         return 0
 
