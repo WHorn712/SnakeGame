@@ -182,6 +182,9 @@ def distance_snake_food(snake, food):
 
 
 def get_reward(last_distance, snake, food, game_close, frame_iteration, width, height):
+    for x in snake.snake_list[:-1]:
+        if x == [snake.x, snake.y]:
+            return -11
     if game_close or frame_iteration > 100*snake.length:
         return -10
     elif snake.x == food.x and snake.y == food.y:
@@ -222,6 +225,6 @@ def get_is_gameover(snake, disp):
         return True
     for x in snake.snake_list[:-1]:
         if x == [snake.x, snake.y]:
-            return True
+            return -11
     return False
 

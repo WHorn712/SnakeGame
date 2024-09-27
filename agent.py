@@ -6,7 +6,7 @@ import snake_IA as snake_game
 from model import Linear_QNet, QTrainer
 import pygame
 
-from snake_IA import Display
+from snake_IA import Display, epsilon
 
 pygame.init()
 MAX_MEMORY = 100_000
@@ -43,6 +43,8 @@ class Agent:
             a.append(1 if snake.x == 1 else 0)
             a.append(1 if snake.x == display.display_width-1 else 0)
         paredes_quadrante = []
+
+
 
         direcao = []
         direcao.append(1 if snake.direction == 2 else 0)
@@ -165,16 +167,13 @@ class Agent:
     def train_short_memory(self, state, action, reward, next_state, done):
         self.trainer.train_step(state, action, reward, next_state, done)
 
-    def get_action(self, state):
+    def get_action(self, state, score):
         # random moves: tradeoff exploration / exploitation
-        if self.epsilon>1:
-            self.epsilon = 80 - self.n_game
-        elif self.epsilon==1 or (self.epsilon<1 and self.epsilon>0.1):
-            self.epsilon -= 0.1
+        if self.n_game <= 30:
+            self.epsilon -= 1
         else:
-            self.epsilon = self.epsilon
+            self.epsilon -= score if self.epsilon - score >= 10 else 0
 
-        self.epsilon = 80 - self.n_game
         final_move = [0,0,0]
         if random.randint(0,200) < self.epsilon:
             move = random.randint(0, 2)
@@ -206,7 +205,7 @@ while True:
         state_old = agent.get_state(display, snake, food)
 
         # get move
-        final_move = agent.get_action(state_old)
+        final_move = agent.get_action(state_old, record)
 
         snake.move_snake(final_move)
         snake.update_position()
