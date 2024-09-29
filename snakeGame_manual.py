@@ -1,11 +1,9 @@
 from enum import Enum
-import math
 import pygame
-
 import random
-import numpy as np
 
 pygame.init()
+
 
 class Color:
     """Stores the necessary colors for the game"""
@@ -60,6 +58,7 @@ class Score:
         display.display.blit(value, [0, 0])
 
 class Direction(Enum):
+    """ENUM class that represents all the directions in which the snake moves."""
     RIGHT = 1
     LEFT = 2
     UP = 3
@@ -125,27 +124,6 @@ class Snake:
         """Adds one to the snake's size variable"""
         self.length += 1
 
-repeticoes = 0
-def position_food(display_width, display_height, block, snake=None):
-    if snake == None:
-        lista = []
-        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
-        return lista
-    lista = []
-    x = []
-    y = []
-    for i in snake.snake_list:
-        x.append(i[0])
-        y.append(i[1])
-    ok = True
-    while ok:
-        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
-        if lista[0] not in x or lista[1] not in y:
-            ok = False
-    return lista
-
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
     def __init__(self, pygame):
@@ -168,87 +146,45 @@ class Food:
             score.sum_score()
 
 
-def get_state(snake, food):
-    state = (
-        snake.x,
-        snake.y,
-        food.x,
-        food.y,
-        snake.direction
-    )
-    return state
-
-actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
-def distance_snake_food(snake, food):
-    c = (food.x - snake.x)
-    c = c*-1 if c<=0 else c
-    b = (food.y - snake.y)
-    b = b*-1 if b<=0 else b
-    return math.sqrt((b**2)+(c**2))
-
-
-def get_reward(last_distance, snake, food, game_close, frame_iteration, width, height):
-    for x in snake.snake_list[:-1]:
-        if x == [snake.x, snake.y]:
-            return -11
-    if game_close or frame_iteration > 100*snake.length:
-        return -10
-    elif snake.x == food.x and snake.y == food.y:
-        return 10
-    elif distance_snake_food(snake, food) < last_distance:
-        return 5
-    else:
-        return -5
-
-q_table = {}
-
-alpha = 0.1
-gamma = 0.9
-epsilon = 0.1
-num_episodes = 1000
-state = [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1]
-
-def choose_action(state):
-    if random.uniform(0, 1) < epsilon:
-        return random.randint(0, len(actions) - 1)
-    else:
-        if state not in q_table:
-            q_table[state] = [0] * len(actions)
-        return np.argmax(q_table[state])
-
-def update_q_table(state, action, reward, next_state):
-    if state not in q_table:
-        q_table[state] = [0] * len(actions)
-    if next_state not in q_table:
-        q_table[next_state] = [0] * len(actions)
-    best_next_action = np.argmax(q_table[next_state])
-    td_target = reward + gamma * q_table[next_state][best_next_action]
-    td_error = td_target - q_table[state][action]
-    q_table[state][action] += alpha * td_error
+def position_food(display_width, display_height, block, snake=None):
+    """Function that randomizes a new position for the food."""
+    if snake == None:
+        lista = []
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        return lista
+    lista = []
+    x = []
+    y = []
+    for i in snake.snake_list:
+        x.append(i[0])
+        y.append(i[1])
+    while True:
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        if lista[0] not in x or lista[1] not in y:
+            break
+    return lista
 
 def get_is_gameover(snake, disp):
+    """Function that checks if the snake has hit the wall or itself."""
     if snake.x >= disp.display_width or snake.x < 0 or snake.y >= disp.display_height or snake.y < 0:
         return True
     for x in snake.snake_list[:-1]:
         if x == [snake.x, snake.y]:
-            return -11
+            return True
     return False
 
+
+#Main game loop with pygame.
 while True:
-    ok = False
-    plot_scores = []
-    plot_mean_scores = []
-    total_score = []
-    record = 0
     display = Display(pygame)
     snake = Snake(pygame)
     food = Food(pygame)
     score_game = Score()
-    frame_iteraction = 0
     while True:
-        frame_iteraction += 1
-
         move_new_dir = 0
+        ok = False
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
@@ -259,6 +195,10 @@ while True:
                     move_new_dir = 3
                 if event.key == pygame.K_DOWN:
                     move_new_dir = 4
+                if event.key == pygame.K_q:
+                    ok = True
+        if ok:
+            break
         snake.move_snake(move_new_dir)
         snake.update_position()
         done = get_is_gameover(snake, display)
@@ -277,8 +217,6 @@ while True:
         score_game.draw_score(display)
 
         if done:
-            # train long memory, plot result
-            frame_iteraction = 0
             snake.x = display.display_width / 2
             snake.y = display.display_height / 2
             snake.length = 1
@@ -287,13 +225,6 @@ while True:
             food.x = lista[0]
             food.y = lista[1]
             score_game.score = 0
-            frame_iteraction = 0
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
-                    ok = True
-        if ok:
-            break
         display.update_screen()
         food.draw_food(pygame, display)
         snake.draw_snake(display, pygame)

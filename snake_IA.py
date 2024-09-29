@@ -1,6 +1,5 @@
 from enum import Enum
 import math
-
 import random
 import numpy as np
 
@@ -23,12 +22,6 @@ class Display:
         self.display = pygame.display.set_mode((self.display_width, self.display_height))
         pygame.display.set_caption('SNAKE GAME')
         self.clock = pygame.time.Clock()
-
-    def draw_message_gameOver(self, msg, color=Color().red):
-        """Draws the game over message on the screen. It has a mandatory parameter that represents the message
-        to be displayed, and an optional parameter that represents the color of the message"""
-        msg = Score().font_style.render(msg, True, color)
-        self.display.blit(msg, [self.display_width / 6, self.display_height / 3])
 
     def update_screen(self):
         """Updates the screen color"""
@@ -59,6 +52,7 @@ class Score:
         display.display.blit(value, [0, 0])
 
 class Direction(Enum):
+    """ENUM class that represents all the directions in which the snake moves."""
     RIGHT = 1
     LEFT = 2
     UP = 3
@@ -133,27 +127,6 @@ class Snake:
         """Adds one to the snake's size variable"""
         self.length += 1
 
-repeticoes = 0
-def position_food(display_width, display_height, block, snake=None):
-    if snake == None:
-        lista = []
-        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
-        return lista
-    lista = []
-    x = []
-    y = []
-    for i in snake.snake_list:
-        x.append(i[0])
-        y.append(i[1])
-    ok = True
-    while ok:
-        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
-        if lista[0] not in x or lista[1] not in y:
-            ok = False
-    return lista
-
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
     def __init__(self, pygame):
@@ -176,26 +149,37 @@ class Food:
             score.sum_score()
 
 
-def get_state(snake, food):
-    state = (
-        snake.x,
-        snake.y,
-        food.x,
-        food.y,
-        snake.direction
-    )
-    return state
+def position_food(display_width, display_height, block, snake=None):
+    """Function that randomizes a new position for the food."""
+    if snake == None:
+        lista = []
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        return lista
+    lista = []
+    x = []
+    y = []
+    for i in snake.snake_list:
+        x.append(i[0])
+        y.append(i[1])
+    ok = True
+    while ok:
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        if lista[0] not in x or lista[1] not in y:
+            ok = False
+    return lista
 
-actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
 def distance_snake_food(snake, food):
+    """Function that returns the distance between the snake and the food in the form of a hypotenuse."""
     c = (food.x - snake.x)
     c = c*-1 if c<=0 else c
     b = (food.y - snake.y)
     b = b*-1 if b<=0 else b
     return math.sqrt((b**2)+(c**2))
 
-
 def get_reward(last_distance, snake, food, game_close, frame_iteration, width, height):
+    """Function that returns the snake's reward for making the movement decision."""
     for x in snake.snake_list[:-1]:
         if x == [snake.x, snake.y]:
             return -11
@@ -208,37 +192,11 @@ def get_reward(last_distance, snake, food, game_close, frame_iteration, width, h
     else:
         return -5
 
-q_table = {}
-
-alpha = 0.1
-gamma = 0.9
-epsilon = 0.1
-num_episodes = 1000
-state = [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1]
-
-def choose_action(state):
-    if random.uniform(0, 1) < epsilon:
-        return random.randint(0, len(actions) - 1)
-    else:
-        if state not in q_table:
-            q_table[state] = [0] * len(actions)
-        return np.argmax(q_table[state])
-
-def update_q_table(state, action, reward, next_state):
-    if state not in q_table:
-        q_table[state] = [0] * len(actions)
-    if next_state not in q_table:
-        q_table[next_state] = [0] * len(actions)
-    best_next_action = np.argmax(q_table[next_state])
-    td_target = reward + gamma * q_table[next_state][best_next_action]
-    td_error = td_target - q_table[state][action]
-    q_table[state][action] += alpha * td_error
-
 def get_is_gameover(snake, disp):
+    """Function that checks if the snake has hit the wall or itself."""
     if snake.x >= disp.display_width or snake.x < 0 or snake.y >= disp.display_height or snake.y < 0:
         return True
     for x in snake.snake_list[:-1]:
         if x == [snake.x, snake.y]:
-            return -11
+            return True
     return False
-

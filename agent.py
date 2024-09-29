@@ -5,16 +5,16 @@ from collections import deque
 import snake_IA as snake_game
 from model import Linear_QNet, QTrainer
 import pygame
-
-from snake_IA import Display, epsilon
+from snake_IA import Display
 
 pygame.init()
+
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
 
 class Agent:
-
+    """Class that acts as a bridge between the model and the game."""
     def __init__(self):
         self.n_game = 0
         self.epsilon = 80 # randomness
@@ -24,7 +24,10 @@ class Agent:
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, display, snake, food):
-        #11 valores -> 3 perigos ; 4 direção ; 4 comidas
+        """Function that returns the game state as a list of 15 binary numbers. 3 values about walls immediately ahead;
+        4 values about the snake's direction; 4 values about the position of the food relative to the snake; 3 values
+        about the danger of walls according to the quadrant the snake is in; 1 value indicating if the snake and food
+        are in the same quadrant, which is 1 if true, otherwise 0."""
         a = []
         if snake.direction == 1:
             a.append(1 if snake.x==display.display_width-1 else 0)
@@ -42,9 +45,6 @@ class Agent:
             a.append(1 if snake.y == display.display_height-1 else 0)
             a.append(1 if snake.x == 1 else 0)
             a.append(1 if snake.x == display.display_width-1 else 0)
-        paredes_quadrante = []
-
-
 
         direcao = []
         direcao.append(1 if snake.direction == 2 else 0)
@@ -58,10 +58,9 @@ class Agent:
         comida.append(1 if food.y - snake.y < 0 else 0)
         comida.append(1 if food.y - snake.y > 0 else 0)
 
-
         width = display.display_width
         height = display.display_height
-
+        paredes_quadrante = []
         snx = 1 if snake.x < width // 2 else 2
         snake_quadrante = 1
         if snx == 1:
@@ -138,7 +137,6 @@ class Agent:
                 paredes_quadrante.append(0)
                 paredes_quadrante.append(1)
 
-
         fnx = 1 if food.x < width // 2 else 2
         food_quadrante = 1
         if fnx == 1:
@@ -153,9 +151,11 @@ class Agent:
         return np.array(a)
 
     def remember(self, state, action, reward, next_state, done):
+        """Function that stores the experience in the agent's memory."""
         self.memory.append((state, action, reward, next_state, done))
 
     def train_long_memory(self):
+        """Function that trains the agent using a batch of experiences from memory."""
         if len(self.memory) > BATCH_SIZE:
             mini_sample = random.sample(self.memory, BATCH_SIZE)
         else:
@@ -165,9 +165,13 @@ class Agent:
         self.trainer.train_step(states, actions, rewards, next_states, dones)
 
     def train_short_memory(self, state, action, reward, next_state, done):
+        """This function updates the agent's model with the latest experience consisting of the current state, action
+        taken, reward received, next state, and whether the episode has ended. This immediate update helps the agent
+        quickly adapt to new information and refine its decision-making process on-the-fly."""
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state, score):
+        """Function that returns the snake's action according to the trained model and the current state."""
         # random moves: tradeoff exploration / exploitation
         if self.n_game <= 30:
             self.epsilon -= 1
@@ -186,11 +190,8 @@ class Agent:
 
         return final_move
 
+#Main game loop with pygame.
 while True:
-    ok = False
-    plot_scores = []
-    plot_mean_scores = []
-    total_score = []
     record = 0
     agent = Agent()
     display = Display(pygame)
@@ -248,7 +249,6 @@ while True:
             food.x = lista[0]
             food.y = lista[1]
             score_game.score = 0
-            frame_iteraction = 0
             agent.n_game += 1
             agent.train_long_memory()
 
@@ -257,6 +257,7 @@ while True:
                 agent.model.save()
 
             print('Game', agent.n_game, 'Score', score, 'Record', record)
+        ok = False
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
@@ -271,7 +272,3 @@ while True:
         display.clock.tick(snake.speed)
     pygame.quit()
     quit()
-
-#if __name__ == '__main__':
-    #pygame.init()
-    #train()

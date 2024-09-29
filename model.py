@@ -4,21 +4,23 @@ import torch.optim as optim
 import torch.nn.functional as F
 import os
 
-from snake_IA import actions
-
 
 class Linear_QNet(nn.Module):
+    """Simple neural network model using PyTorch."""
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
+        """It uses the Relu activation function along with linear layers to define the sequence of
+        operations in the model."""
         x = F.relu(self.linear1(x))
         x = self.linear2(x)
         return x
 
     def save(self, file_name='model.pth'):
+        """Responsible for model persistence by saving the parameters to the file model.pth."""
         model_folder_path = './model'
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
@@ -26,6 +28,7 @@ class Linear_QNet(nn.Module):
         torch.save(self.state_dict(), file_name)
 
 class QTrainer:
+    """Training the neural network model in a reinforcement learning environment using the Q-Learning algorithm."""
     def __init__(self, model, lr, gamma):
         self.lr = lr
         self.gamma = gamma
@@ -34,6 +37,7 @@ class QTrainer:
         self.criterion = nn.MSELoss()
 
     def train_step(self, state, action, reward, next_state, done):
+        """This method performs a training step, updating the model based on a state transition."""
         state = torch.tensor(state, dtype=torch.float)
         next_state = torch.tensor(next_state, dtype=torch.float)
         action = torch.tensor(action, dtype=torch.long)
@@ -68,5 +72,3 @@ class QTrainer:
         loss.backward()
 
         self.optimizer.step()
-
-
