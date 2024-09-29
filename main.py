@@ -1,4 +1,4 @@
 
-#import agent
+import agent
 
-import snakeGame_manual
+#import snakeGame_manual

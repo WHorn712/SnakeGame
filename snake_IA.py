@@ -134,17 +134,31 @@ class Snake:
         self.length += 1
 
 repeticoes = 0
-def position_food(display_width, display_height, block, n_game):
+def position_food(display_width, display_height, block, snake=None):
+    if snake == None:
+        lista = []
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        return lista
     lista = []
-    lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-    lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+    x = []
+    y = []
+    for i in snake.snake_list:
+        x.append(i[0])
+        y.append(i[1])
+    ok = True
+    while ok:
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        if lista[0] not in x or lista[1] not in y:
+            ok = False
     return lista
 
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
     def __init__(self, pygame):
         self.block = 10
-        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block, 0)
+        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block)
         self.x = lista[0]
         self.y = lista[1]
 

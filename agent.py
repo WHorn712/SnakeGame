@@ -212,7 +212,7 @@ while True:
         done = snake_game.get_is_gameover(snake, display)
         reward = snake_game.get_reward(last_distance, snake, food, done, frame_iteraction, display.display_width, display.display_height)
         if reward == 10:
-            lista = snake_game.position_food(display.display_width, display.display_height, food.block, frame_iteraction)
+            lista = snake_game.position_food(display.display_width, display.display_height, food.block, snake=snake)
             food.x = lista[0]
             food.y = lista[1]
             snake.increase_size()
@@ -244,7 +244,7 @@ while True:
             snake.y = display.display_height / 2
             snake.length = 1
             snake.snake_list = []
-            lista = snake_game.position_food(display.display_width, display.display_height, food.block, frame_iteraction)
+            lista = snake_game.position_food(display.display_width, display.display_height, food.block, snake=snake)
             food.x = lista[0]
             food.y = lista[1]
             score_game.score = 0

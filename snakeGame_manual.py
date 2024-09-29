@@ -5,7 +5,7 @@ import pygame
 import random
 import numpy as np
 
-
+pygame.init()
 
 class Color:
     """Stores the necessary colors for the game"""
@@ -86,6 +86,8 @@ class Snake:
 
     def move_snake(self, new_dir):
         """Moves the snake based on the action chosen by the Q-Learning algorithm"""
+        if new_dir == 0:
+            return None
         if new_dir == 3:
             if self.direction != 4:
                 self.y1_change = -self.block
@@ -124,17 +126,31 @@ class Snake:
         self.length += 1
 
 repeticoes = 0
-def position_food(display_width, display_height, block, n_game):
+def position_food(display_width, display_height, block, snake=None):
+    if snake == None:
+        lista = []
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        return lista
     lista = []
-    lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-    lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+    x = []
+    y = []
+    for i in snake.snake_list:
+        x.append(i[0])
+        y.append(i[1])
+    ok = True
+    while ok:
+        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
+        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
+        if lista[0] not in x or lista[1] not in y:
+            ok = False
     return lista
 
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
     def __init__(self, pygame):
         self.block = 10
-        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block, 0)
+        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block)
         self.x = lista[0]
         self.y = lista[1]
 
@@ -230,7 +246,6 @@ while True:
     score_game = Score()
     frame_iteraction = 0
     while True:
-        last_distance = distance_snake_food(snake, food)
         frame_iteraction += 1
 
         move_new_dir = 0
@@ -248,7 +263,7 @@ while True:
         snake.update_position()
         done = get_is_gameover(snake, display)
         if snake.x == food.x and snake.y == food.y:
-            lista = position_food(display.display_width, display.display_height, food.block, frame_iteraction)
+            lista = position_food(display.display_width, display.display_height, food.block, snake)
             food.x = lista[0]
             food.y = lista[1]
             snake.increase_size()
@@ -268,7 +283,7 @@ while True:
             snake.y = display.display_height / 2
             snake.length = 1
             snake.snake_list = []
-            lista = position_food(display.display_width, display.display_height, food.block, frame_iteraction)
+            lista = position_food(display.display_width, display.display_height, food.block, snake)
             food.x = lista[0]
             food.y = lista[1]
             score_game.score = 0
