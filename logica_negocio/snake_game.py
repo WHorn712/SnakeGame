@@ -77,19 +77,21 @@ class Snake:
         for i in self.snake_list:
             pygame.draw.rect(display.display, color, [i[0], i[1], self.block, self.block])
 
-    def move_snake(self, action):
+    def move_snake(self, action, is_IA):
         """Moves the snake based on the action chosen by the Q-Learning algorithm"""
-        clock_wise = [Direction.RIGHT.value, Direction.DOWN.value, Direction.LEFT.value, Direction.UP.value]
-        idx = clock_wise.index(self.direction)
-        if np.array_equal(action, [1,0,0]):
-            new_dir = clock_wise[idx]
-        elif np.array_equal(action, [0,1,0]):
-            next_idx = (idx+1) % 4
-            new_dir = clock_wise[next_idx]
+        if is_IA:
+            clock_wise = [Direction.RIGHT.value, Direction.DOWN.value, Direction.LEFT.value, Direction.UP.value]
+            idx = clock_wise.index(self.direction)
+            if np.array_equal(action, [1,0,0]):
+                new_dir = clock_wise[idx]
+            elif np.array_equal(action, [0,1,0]):
+                next_idx = (idx+1) % 4
+                new_dir = clock_wise[next_idx]
+            else:
+                next_idx = (idx-1) % 4
+                new_dir = clock_wise[next_idx]
         else:
-            next_idx = (idx-1) % 4
-            new_dir = clock_wise[next_idx]
-
+            new_dir = action
         if new_dir == 3:
             if self.direction != 4:
                 self.y1_change = -self.block
@@ -105,11 +107,13 @@ class Snake:
                 self.x1_change = -self.block
                 self.y1_change = 0
                 self.direction = 2
-        else:
+        elif new_dir == 1:
             if self.direction != 2:
                 self.x1_change = self.block
                 self.y1_change = 0
                 self.direction = 1
+        else:
+            return None
 
     def update_position(self):
         """Changes the snake's x and y variables according to xchange and ychange"""
@@ -200,3 +204,6 @@ def get_is_gameover(snake, disp):
         if x == [snake.x, snake.y]:
             return True
     return False
+
+def check_colision(snake, food):
+    return snake.x == food.x and snake.y == food.y
