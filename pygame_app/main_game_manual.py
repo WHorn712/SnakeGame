@@ -1,4 +1,5 @@
 import pygame
+import snake_game_pgm as sgp
 from logica_negocio import snake_game
 
 pygame.init()
@@ -7,10 +8,10 @@ pygame.init()
 
 #Main game loop with pygame.
 while True:
-    display = snake_game.Display(pygame)
-    snake = snake_game.Snake(pygame)
-    food = snake_game.Food(pygame)
-    score_game = snake_game.Score(pygame)
+    display = sgp.Display(pygame)
+    snake = sgp.Snake(pygame)
+    food = sgp.Food()
+    score_game = sgp.Score(pygame)
     while True:
         move_new_dir = 0
         ok = False

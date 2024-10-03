@@ -16,21 +16,13 @@ class Color:
 
 class Display:
     """Represents the game screen"""
-    def __init__(self, pygame):
-        self.display_width = 600
-        self.display_height = 400
-        self.display = pygame.display.set_mode((self.display_width, self.display_height))
-        pygame.display.set_caption('SNAKE GAME')
-        self.clock = pygame.time.Clock()
-
-    def update_screen(self):
-        """Updates the screen color"""
-        self.display.fill(Color().white)
+    def __init__(self, width=600, height=400):
+        self.display_width = width
+        self.display_height = height
 
 class Score:
     """Represents the game score"""
-    def __init__(self, pygame):
-        self.font_style = pygame.font.SysFont("bahnschrift", 25)
+    def __init__(self):
         self.score = 0
         self.disp = 0
         self.frame_iteration = 0
@@ -42,14 +34,6 @@ class Score:
     def sum_disp(self):
         """Increases the disp variable by 1"""
         self.disp += 1
-        repeticoes = self.disp
-        print(self.disp)
-
-    def draw_score(self, display, color=Color().black):
-        """Draws the score on the screen. It has one mandatory variable, which is the screen, and an optional variable,
-        which is the color of the letters"""
-        value = self.font_style.render("SUA PONTUAÇÃO: " + str(self.score), True, color)
-        display.display.blit(value, [0, 0])
 
 class Direction(Enum):
     """ENUM class that represents all the directions in which the snake moves."""
@@ -60,9 +44,9 @@ class Direction(Enum):
 
 class Snake:
     """Represents the game's snake, contains all the variables and functions that the snake needs in the game"""
-    def __init__(self, pygame, snake_block=10, snake_speed=15):
-        self.x = Display(pygame).display_width / 2
-        self.y = Display(pygame).display_height / 2
+    def __init__(self, snake_block=10, snake_speed=15, x=10, y=10):
+        self.x = x
+        self.y = y
         self.x1_change = 0
         self.y1_change = 0
         self.block = snake_block
@@ -70,12 +54,6 @@ class Snake:
         self.snake_list = []
         self.length = 1
         self.direction = 1
-
-    def draw_snake(self, display, pygame, color=Color().black):
-        """Draws the snake on the screen. Requires one mandatory variable, which is the screen, and an optional
-        variable, which is the color of the snake."""
-        for i in self.snake_list:
-            pygame.draw.rect(display.display, color, [i[0], i[1], self.block, self.block])
 
     def move_snake(self, action, is_IA):
         """Moves the snake based on the action chosen by the Q-Learning algorithm"""
@@ -133,15 +111,11 @@ class Snake:
 
 class Food:
     """Represents the game's food. Contains all the variables and functions of the food"""
-    def __init__(self, pygame):
+    def __init__(self):
         self.block = 10
-        lista = position_food(Display(pygame).display_width, Display(pygame).display_height, self.block)
+        lista = position_food(Display().display_width, Display().display_height, self.block)
         self.x = lista[0]
         self.y = lista[1]
-
-    def draw_food(self, pygame, disp):
-        """Draws the food on the game screen. Mandatory parameters display and pygame"""
-        pygame.draw.rect(disp.display, Color().green, [self.x, self.y, self.block, self.block])
 
     def analyze_score(self, snake, score, display):
         """Analyzes if the snake has eaten the food in the current frame. If so, all the variable changes are made"""

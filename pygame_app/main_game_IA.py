@@ -1,4 +1,5 @@
 import pygame
+import snake_game_pgm as sgp
 from logica_negocio import agent, snake_game
 
 pygame.init()
@@ -7,10 +8,10 @@ pygame.init()
 while True:
     record = 0
     agent = agent.Agent()
-    display = snake_game.Display(pygame)
-    snake = snake_game.Snake(pygame)
-    food = snake_game.Food(pygame)
-    score_game = snake_game.Score(pygame)
+    display = sgp.Display(pygame)
+    snake = sgp.Snake(pygame)
+    food = sgp.Food()
+    score_game = sgp.Score(pygame)
     frame_iteraction = 0
     while True:
         last_distance = snake_game.distance_snake_food(snake, food)
