@@ -12,22 +12,20 @@
             position: absolute;
             top: 20px;
             left: 20px;
+            box-sizing: border-box;
         }
         #score {
             position: absolute;
-            top: 10px; /* Espaçamento do topo da tela */
-            left: 10px; /* Espaçamento da esquerda da tela */
+            top: 10px;
+            left: 10px;
             font-size: 32px;
             font-family: Arial, sans-serif;
         }
-        #snake {
+        .snake-segment {
             width: 10px;
             height: 10px;
             background-color: black;
             position: absolute;
-            top: 50%; /* Metade da altura da tela */
-            left: 50%; /* Metade da largura da tela */
-            transform: translate(-50%, -50%); /* Centraliza o pixel */
         }
         #food {
             width: 10px;
@@ -40,15 +38,19 @@
 <body>
     <div id="display">
         <div id="score">Score: 0</div>
-        <div id="snake"></div>
         <div id="food"></div>
     </div>
     <script>
-        let direction = 0; // 0: parado, 1: direita, 2: esquerda, 3: cima, 4: baixo
-        let gameLoop;
+        let direction = ''; // Initially no movement
+        let speed = 15; // Adjusted for smoother movement
+        let gameLoop = null;
+        let score = 0;
+        let snakeSegments = [];
+        let lastMoveTime = 0;
+        const moveInterval = 100; // Time in milliseconds between moves
 
         function posicaoAleatoria(max) {
-            return Math.floor(Math.random() * max);
+            return Math.floor(Math.random() * (max / 10)) * 10;
         }
 
         function posicionarComida() {
@@ -65,97 +67,128 @@
             food.style.top = comidaY + 'px';
         }
 
-        function moverCobraAutomaticamente() {
-            const snake = document.getElementById('snake');
-            const display = document.getElementById('display');
-            const step = 10;
-            let left = parseInt(snake.style.left);
-            let top = parseInt(snake.style.top);
+        function moverCobra(timestamp) {
+            if (!lastMoveTime) lastMoveTime = timestamp;
+            const elapsed = timestamp - lastMoveTime;
 
-            switch(direction) {
-                case 1: // Direita
-                    left = Math.min(display.clientWidth - snake.clientWidth, left + step);
-                    break;
-                case 2: // Esquerda
-                    left = Math.max(0, left - step);
-                    break;
-                case 3: // Cima
-                    top = Math.max(0, top - step);
-                    break;
-                case 4: // Baixo
-                    top = Math.min(display.clientHeight - snake.clientHeight, top + step);
-                    break;
+            if (elapsed > moveInterval && direction !== '') {
+                lastMoveTime = timestamp;
+
+                for (let i = snakeSegments.length - 1; i > 0; i--) {
+                    snakeSegments[i].style.left = snakeSegments[i - 1].style.left;
+                    snakeSegments[i].style.top = snakeSegments[i - 1].style.top;
+                }
+
+                const head = snakeSegments[0];
+                let left = parseInt(head.style.left);
+                let top = parseInt(head.style.top);
+
+                switch (direction) {
+                    case 'right':
+                        left += speed;
+                        break;
+                    case 'left':
+                        left -= speed;
+                        break;
+                    case 'up':
+                        top -= speed;
+                        break;
+                    case 'down':
+                        top += speed;
+                        break;
+                }
+
+                const display = document.getElementById('display');
+                if (left < 0 || left >= display.clientWidth || top < 0 || top >= display.clientHeight) {
+                    inicializarJogo();
+                    return;
+                }
+
+                head.style.left = left + 'px';
+                head.style.top = top + 'px';
+
+                detectarColisao();
             }
 
-            snake.style.left = left + 'px';
-            snake.style.top = top + 'px';
-
-            // Verificar colisão com a comida
-            detectarColisao();
+            gameLoop = requestAnimationFrame(moverCobra);
         }
 
         function detectarColisao() {
-            const snake = document.getElementById('snake');
+            const head = snakeSegments[0];
             const food = document.getElementById('food');
+            const scoreDisplay = document.getElementById('score');
 
-            const snakeRect = snake.getBoundingClientRect();
+            const headRect = head.getBoundingClientRect();
             const foodRect = food.getBoundingClientRect();
 
             if (
-                snakeRect.left < foodRect.right &&
-                snakeRect.right > foodRect.left &&
-                snakeRect.top < foodRect.bottom &&
-                snakeRect.bottom > foodRect.top
+                headRect.left < foodRect.right &&
+                headRect.right > foodRect.left &&
+                headRect.top < foodRect.bottom &&
+                headRect.bottom > foodRect.top
             ) {
-                inicializarJogo(); // Reiniciar o jogo
+                score += 1;
+                scoreDisplay.textContent = 'Score: ' + score;
+
+                const newSegment = document.createElement('div');
+                newSegment.className = 'snake-segment';
+                newSegment.style.left = snakeSegments[snakeSegments.length - 1].style.left;
+                newSegment.style.top = snakeSegments[snakeSegments.length - 1].style.top;
+                document.getElementById('display').appendChild(newSegment);
+                snakeSegments.push(newSegment);
+
+                posicionarComida();
             }
         }
 
         function inicializarJogo() {
-            const snake = document.getElementById('snake');
             const display = document.getElementById('display');
+            const scoreDisplay = document.getElementById('score');
 
-            // Posicionar a cobra no centro
-            const initialLeft = (display.clientWidth - snake.clientWidth) / 2;
-            const initialTop = (display.clientHeight - snake.clientHeight) / 2;
-            snake.style.left = initialLeft + 'px';
-            snake.style.top = initialTop + 'px';
-
-            // Posicionar a comida aleatoriamente
-            posicionarComida();
-
-            // Resetar direção
-            direction = 0;
-
-            // Limpar qualquer loop de jogo existente
             if (gameLoop) {
-                clearInterval(gameLoop);
+                cancelAnimationFrame(gameLoop);
             }
 
-            // Iniciar o loop de jogo
-            gameLoop = setInterval(moverCobraAutomaticamente, 100);
+            score = 0;
+            scoreDisplay.textContent = 'Score: ' + score;
+
+            snakeSegments.forEach(segment => segment.remove());
+            snakeSegments = [];
+
+            const head = document.createElement('div');
+            head.className = 'snake-segment';
+            head.style.left = '300px';
+            head.style.top = '200px';
+            display.appendChild(head);
+            snakeSegments.push(head);
+
+            posicionarComida();
+
+            direction = ''; // Reset direction to stop movement
+
+            gameLoop = requestAnimationFrame(moverCobra);
         }
 
         function controlarMovimento(event) {
-            switch(event.key) {
+            switch (event.key) {
                 case 'ArrowRight':
-                    if (direction!=2){
-                    direction = 1;
+                    if (direction !== 'left') {
+                        direction = 'right';
                     }
                     break;
                 case 'ArrowLeft':
-                    if (direction!=1){
-                    direction = 2;
+                    if (direction !== 'right') {
+                        direction = 'left';
                     }
                     break;
                 case 'ArrowUp':
-                    if (direction!=4){
-                    direction = 3;
+                    if (direction !== 'down') {
+                        direction = 'up';
                     }
                     break;
                 case 'ArrowDown':
-                    if (direction!=3){
-                    direction = 4;
+                    if (direction !== 'up') {
+                        direction = 'down';
                     }
                     break;
                 case 'q':
@@ -164,14 +197,10 @@
             }
         }
 
-        // Inicializar o jogo ao carregar a página
         window.onload = function() {
             inicializarJogo();
             document.addEventListener('keydown', controlarMovimento);
         };
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
