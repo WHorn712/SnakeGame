@@ -19,6 +19,24 @@ class Display:
     def __init__(self, width=600, height=400):
         self.display_width = width
         self.display_height = height
+        self.pixels_positions = self.pixels()
+
+    def pixels(self):
+        grade_x = []
+        grade_y = []
+        i = 10
+        while True:
+            grade_x.append(float(i))
+            i += 10
+            if i == self.display_width:
+                break
+        i = 10
+        while True:
+            grade_y.append(float(i))
+            i += 10
+            if i == self.display_height:
+                break
+        return [grade_x, grade_y]
 
 class Score:
     """Represents the game score"""
@@ -141,11 +159,21 @@ def position_food(display_width, display_height, block, snake=None):
         x.append(i[0])
         y.append(i[1])
     ok = True
-    while ok:
-        lista.append(round(random.randrange(0, display_width, block) // 10.0) * 10.0)
-        lista.append(round(random.randrange(10, display_height - 10, block) // 10.0) * 10.0)
-        if lista[0] not in x or lista[1] not in y:
-            ok = False
+    grade_x = Display().pixels()[0]
+    grade_y = Display().pixels()[1]
+    for i in x:
+        if i in grade_x:
+            grade_x.remove(i)
+    for i in y:
+        if i in grade_y:
+            grade_y.remove(i)
+    a = 0
+    b = 0
+    for i in range(20):
+        a = random.randrange(0, len(grade_x))
+        b = random.randrange(0, len(grade_y))
+    lista.append(grade_x[a])
+    lista.append(grade_y[b])
     return lista
 
 def distance_snake_food(snake, food):
